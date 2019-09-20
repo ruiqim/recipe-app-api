@@ -240,3 +240,46 @@ class RecipeImageUploadTests(TestCase):
         res = self.client.post(url, {'image': 'notimage'}, format='multipart')
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_filer_recipes_by_tags(self):
+        """Test returning recipes with specific tags"""
+        recipe1 = sample_recipe(user=self.user, title='Thai Food')
+        recipe2 = sample_recipe(user=self.user, title='Indian Food')
+        tag1 = sample_tag(user=self.user, name='Vegan')
+        tag2 = sample_tag(user=self.user, name='Vegetarian')
+        recipe1.tags.add(tag1)
+        recipe2.tags.add(tag2)
+        recipe3 = sample_recipe(user=self.user, title='Meat Food')
+
+        res = self.client.get(
+            RECIPES_URL,
+            {'tags': f'{tag1.id},{tag2.id}'}
+        )
+
+        serializers1 = RecipeSerializer(recipe1)
+        serializers2 = RecipeSerializer(recipe2)
+        serializers3 = RecipeSerializer(recipe3)
+        self.assertIn(serializers1.data, res.data)
+        self.assertIn(serializers2.data, res.data)
+        self.assertNotIn(serializers3.data, res.data)
+
+    def test_filer_recipes_by_ingredients(self):
+        """Test returning recipe with sepcific ingredients"""
+        recipe1 = sample_recipe(user=self.user, title="Recipe 1")
+        recipe2 = sample_recipe(user=self.user, title="Recipe 2")
+        ingredient1 = sample_ingredient(user=self.user, name="Ingredient 1")
+        ingredient2 = sample_ingredient(user=self.user, name="Ingredient 2")
+        recipe1.ingredients.add(ingredient1)
+        recipe2.ingredients.add(ingredient2)
+        recipe3 = sample_recipe(user=self.user, title="Recipe 3")
+
+        res = self.client.get(
+            RECIPES_URL,
+            {'ingredients': f'{ingredient1.id},{ingredient2.id}'}
+        )
+        s1 = RecipeSerializer(recipe1)
+        s2 = RecipeSerializer(recipe2)
+        s3 = RecipeSerializer(recipe3)
+        self.assertIn(s1.data, res.data)
+        self.assertIn(s2.data, res.data)
+        self.assertNotIn(s3.data, res.data)
